@@ -1,46 +1,97 @@
-import { HelloWave } from "@/components/HelloWave";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, StyleSheet, Alert } from "react-native";
+import { View, FlatList, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import * as Location from "expo-location";
+import { Button, Layout, Card, Text } from "@ui-kitten/components";
+import Animated from "react-native-reanimated";
 
 export default function DonationListScreen() {
-  const [donations, setDonations] = useState([
-    {
-      id: 1,
-      food_type: "Bread",
-      quantity: 10,
-      location: "40.7128,-74.0060",
-      image:
-        "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_j5tO6KY.jpg",
-      expires_at: "2024-12-01T12:00:00Z",
-      distance: 0.0,
-    },
-    {
-      id: 2,
-      food_type: "Bread",
-      quantity: 10,
-      location: "40.7128,-74.0060",
-      image:
-        "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_1cYwq8W.jpg",
-      expires_at: "2024-12-01T12:00:00Z",
-      distance: 0.0,
-    },
-  ]);
+  const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(false);
   const insets = useSafeAreaInsets();
+  const [location, setLocation] = useState<any>(null);
+
+  const fetchMatchedDonations = async () => {
+    try {
+      const token = await AsyncStorage.getItem("accessToken");
+      console.log("current device location", location);
+      const { coords } = location;
+      const { latitude, longitude } = coords || {};
+      const response = await axios.get(
+        `http://127.0.0.1:8000/api/donations/active?location=${latitude},${longitude}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setDonations(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.error(error);
+      // Alert.alert("Error", "Failed to fetch matched donations.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDeviceLocation = async () => {
+    try {
+      // Request permissions
+
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      console.log("location request status", status);
+      if (status !== "granted") {
+        // setErrorMsg("Permission to access location was denied");
+        return;
+      }
+
+      // Get the current location
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Lowest,
+      });
+      setLocation(location);
+    } catch (error) {
+      // setErrorMsg("Error fetching location");
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (location != null) {
+      fetchMatchedDonations();
+    }
+  }, [location]);
 
   const renderItem = ({ item }: { item: any }) => (
-    <View style={styles.card}>
+    <Card style={styles.card} status="primary">
+      <Animated.Image resizeMode='stretch' src={`http://127.0.0.1:8000${item.image}`} style={{
+        width: '100%',
+        height: '50%'
+      }} />
       <Text style={styles.foodType}>{item.food_type}</Text>
       <Text>Quantity: {item.quantity}</Text>
       <Text>Distance: {item.distance.toFixed(2)} km</Text>
       <Text>Expires At: {item.expires_at}</Text>
-    </View>
+    </Card>
   );
+
+  if (location == null) {
+    return (
+      <Layout style={styles.container}>
+        <View style={{ paddingTop: insets.top }}>
+          <Button
+            onPress={() => {
+              fetchDeviceLocation();
+            }}
+            appearance="filled"
+          >
+            Let's get your location
+          </Button>
+        </View>
+      </Layout>
+    );
+  }
 
   if (loading) {
     return (
@@ -51,13 +102,14 @@ export default function DonationListScreen() {
   }
 
   return (
-    <View style={{ paddingTop: insets.top }}>
+    <Layout style={{flex: 1 }}>
       <FlatList
+      style={{ paddingTop: insets.top, flex: 1}}
         data={donations}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
       />
-    </View>
+    </Layout>
   );
 }
 
@@ -67,14 +119,21 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   card: {
+    flex: 1,
     padding: 15,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
     marginBottom: 10,
+    minHeight: 250
   },
   foodType: {
     fontSize: 18,
     fontWeight: "bold",
+  },
+  layout: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
