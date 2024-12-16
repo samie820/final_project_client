@@ -10,9 +10,13 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.iamsammiey.finalproject"
+      "bundleIdentifier": "com.iamsammiey.finalproject",
+      "entitlements": {
+        "aps-environment": "production"
+      }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -39,6 +43,14 @@
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Waste Not to use your location."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
         }
       ]
     ],

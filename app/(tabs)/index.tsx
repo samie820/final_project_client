@@ -6,6 +6,7 @@ import axios from "axios";
 import * as Location from "expo-location";
 import { Button, Layout, Card, Text } from "@ui-kitten/components";
 import Animated from "react-native-reanimated";
+import messaging from "@react-native-firebase/messaging";
 
 export default function DonationListScreen() {
   const [donations, setDonations] = useState([]);
@@ -57,6 +58,61 @@ export default function DonationListScreen() {
     }
   };
 
+  const requestPermissionForPushNotifications = async () => {
+    const authStatus = await messaging().requestPermission();
+
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    if (enabled) {
+      console.log("Auth status:", authStatus);
+      return true;
+    }
+    return false;
+  };
+
+  const getDeviceToken = async () => {
+    if (await requestPermissionForPushNotifications()) {
+      messaging()
+        .getToken()
+        .then((token) => {
+          console.log("device token: ", token);
+
+          Alert.alert(token);
+        });
+    } else {
+      console.log("No device token");
+    }
+
+    messaging()
+      .getInitialNotification()
+      .then(async (remoteMessage) => {
+        if (remoteMessage) {
+          console.log("remote message", remoteMessage.notification);
+        }
+      });
+
+    messaging().onNotificationOpenedApp((remoteMessage) => {
+      console.log(
+        "Notification opened from background",
+        remoteMessage.notification
+      );
+    });
+
+    messaging().setBackgroundMessageHandler(async (backgroundMessage) => {
+      console.log("Message handled in the background", backgroundMessage);
+    });
+
+    messaging().onMessage(async (remoteMessage) => {
+      Alert.alert("FCM Remote message: ", JSON.stringify(remoteMessage));
+    });
+  };
+
+  useEffect(() => {
+    getDeviceToken();
+  }, []);
+
   useEffect(() => {
     if (location != null) {
       fetchMatchedDonations();
@@ -65,10 +121,14 @@ export default function DonationListScreen() {
 
   const renderItem = ({ item }: { item: any }) => (
     <Card style={styles.card} status="primary">
-      <Animated.Image resizeMode='stretch' src={`http://127.0.0.1:8000${item.image}`} style={{
-        width: '100%',
-        height: '50%'
-      }} />
+      <Animated.Image
+        resizeMode="stretch"
+        src={`http://127.0.0.1:8000${item.image}`}
+        style={{
+          width: "100%",
+          height: "50%",
+        }}
+      />
       <Text style={styles.foodType}>{item.food_type}</Text>
       <Text>Quantity: {item.quantity}</Text>
       <Text>Distance: {item.distance.toFixed(2)} km</Text>
@@ -102,9 +162,9 @@ export default function DonationListScreen() {
   }
 
   return (
-    <Layout style={{flex: 1 }}>
+    <Layout style={{ flex: 1 }}>
       <FlatList
-      style={{ paddingTop: insets.top, flex: 1}}
+        style={{ paddingTop: insets.top, flex: 1 }}
         data={donations}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
@@ -125,7 +185,7 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 5,
     marginBottom: 10,
-    minHeight: 250
+    minHeight: 250,
   },
   foodType: {
     fontSize: 18,
