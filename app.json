@@ -12,8 +12,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.iamsammiey.finalproject",
       "entitlements": {
-        "aps-environment": "production"
-      }
+        "aps-environment": "development"
+      },
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "googleServicesFile": "./google-services.json",
@@ -29,6 +30,8 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging",
       "expo-router",
       [
         "expo-splash-screen",

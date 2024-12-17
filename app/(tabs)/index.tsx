@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import * as Location from "expo-location";
-import { Button, Layout, Card, Text } from "@ui-kitten/components";
+import { Button, Layout, Card, Text, Input } from "@ui-kitten/components";
 import Animated from "react-native-reanimated";
 import messaging from "@react-native-firebase/messaging";
 
@@ -13,6 +13,7 @@ export default function DonationListScreen() {
   const [loading, setLoading] = useState(false);
   const insets = useSafeAreaInsets();
   const [location, setLocation] = useState<any>(null);
+  const [deviceToken, setDeviceToken] = useState<any>(null);
 
   const fetchMatchedDonations = async () => {
     try {
@@ -80,6 +81,7 @@ export default function DonationListScreen() {
           console.log("device token: ", token);
 
           Alert.alert(token);
+          setDeviceToken(token);
         });
     } else {
       console.log("No device token");
@@ -148,6 +150,7 @@ export default function DonationListScreen() {
           >
             Let's get your location
           </Button>
+          <Input value={deviceToken} />
         </View>
       </Layout>
     );
