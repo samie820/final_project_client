@@ -1,36 +1,48 @@
 import React, { useState, useEffect } from "react";
 import { View, FlatList, StyleSheet, Alert } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import * as Location from "expo-location";
-import {
-  Button,
-  Layout,
-  Card,
-  Text,
-  Input,
-  Spinner,
-} from "@ui-kitten/components";
+import { Button, Layout, Card, Text, Input } from "@ui-kitten/components";
 import Animated from "react-native-reanimated";
 import messaging from "@react-native-firebase/messaging";
 
-export default function HomeScreen() {
+export default function VolunteerScreen() {
   const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(false);
   const insets = useSafeAreaInsets();
   const [location, setLocation] = useState<any>(null);
   const [deviceToken, setDeviceToken] = useState<any>(null);
 
+  const fetchMatchedDonations = async () => {
+    try {
+      const token = await AsyncStorage.getItem("accessToken");
+      console.log("current device location", location);
+      const { coords } = location;
+      const { latitude, longitude } = coords || {};
+      const response = await axios.get(
+        `http://127.0.0.1:8000/api/donations/active?location=${latitude},${longitude}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setDonations(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.error(error);
+      // Alert.alert("Error", "Failed to fetch matched donations.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchDeviceLocation = async () => {
     try {
       // Request permissions
 
       let { status } = await Location.requestForegroundPermissionsAsync();
+      console.log("location request status", status);
       if (status !== "granted") {
         // setErrorMsg("Permission to access location was denied");
         return;
@@ -55,6 +67,7 @@ export default function HomeScreen() {
       authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
     if (enabled) {
+      console.log("Auth status:", authStatus);
       return true;
     }
     return false;
@@ -65,8 +78,9 @@ export default function HomeScreen() {
       messaging()
         .getToken()
         .then((token) => {
+          console.log("device token: ", token);
 
-          //   Alert.alert(token);
+        //   Alert.alert(token);
           setDeviceToken(token);
         });
     } else {
@@ -99,58 +113,65 @@ export default function HomeScreen() {
 
   useEffect(() => {
     getDeviceToken();
-    fetchDeviceLocation();
   }, []);
 
+  useEffect(() => {
+    if (location != null) {
+      fetchMatchedDonations();
+    }
+  }, [location]);
+
+  const renderItem = ({ item }: { item: any }) => (
+    <Card style={styles.card} status="primary">
+      <Animated.Image
+        resizeMode="stretch"
+        src={`http://127.0.0.1:8000${item.image}`}
+        style={{
+          width: "100%",
+          height: "50%",
+        }}
+      />
+      <Text style={styles.foodType}>{item.food_type}</Text>
+      <Text>Quantity: {item.quantity}</Text>
+      <Text>Distance: {item.distance.toFixed(2)} km</Text>
+      <Text>Expires At: {item.expires_at}</Text>
+    </Card>
+  );
+
+  if (location == null) {
+    return (
+      <Layout style={styles.container}>
+        <View style={{ paddingTop: insets.top }}>
+          <Button
+            onPress={() => {
+              fetchDeviceLocation();
+            }}
+            appearance="filled"
+          >
+            Let's get your location
+          </Button>
+          <Input value={deviceToken} />
+        </View>
+      </Layout>
+    );
+  }
 
   if (loading) {
     return (
       <View style={{ paddingTop: insets.top }}>
-        <Spinner size="large" />
+        <Text>Loading donations...</Text>
       </View>
     );
   }
 
   return (
     <Layout style={{ flex: 1 }}>
-      <SafeAreaView style={{
-        maxHeight: '80%',
-        flex: 1,
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16
-      }}>
-        <Card style={{
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginVertical: 16
-        }}>
-          <Text category='h4'>Total Food Rescued</Text>
-          <Text style={{
-            textAlign: 'center'
-          }} category='h4'>100</Text>
-        </Card>
-        <Card style={{
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginVertical: 16
-        }}>
-          <Text category='h4'>Total Food Donated</Text>
-          <Text style={{
-            textAlign: 'center'
-          }} category='h4'>100</Text>
-        </Card>
-        <Card style={{
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginVertical: 16
-        }}>
-          <Text category='h4'>Total Food Distributed</Text>
-          <Text style={{
-            textAlign: 'center'
-          }} category='h4'>100</Text>
-        </Card>
-      </SafeAreaView>
+      <FlatList
+        style={{ paddingTop: insets.top, flex: 1 }}
+        data={donations}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderItem}
+      />
     </Layout>
   );
 }

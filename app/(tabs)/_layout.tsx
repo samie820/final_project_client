@@ -29,8 +29,29 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="discover"
+        options={{
           title: 'Discover',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="location.circle.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="volunteer"
+        options={{
+          title: 'Volunteer',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="fork.knife.circle.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="(donate)"
+        options={{
+          title: 'Donate',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus.app.fill" color={color} />,
         }}
       />
     </Tabs>
