@@ -8,6 +8,7 @@ import { Button, Layout, Card, Text, Input } from "@ui-kitten/components";
 import Animated from "react-native-reanimated";
 import messaging from "@react-native-firebase/messaging";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { router } from "expo-router";
 
 const mockedDonations = [
   {
@@ -68,7 +69,6 @@ export default function PastDonationListScreen() {
   const insets = useSafeAreaInsets();
   const [location, setLocation] = useState<any>(null);
 
-
   const fetchMatchedDonations = async () => {
     try {
       const token = await AsyncStorage.getItem("accessToken");
@@ -89,7 +89,6 @@ export default function PastDonationListScreen() {
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     if (location != null) {
@@ -143,7 +142,21 @@ export default function PastDonationListScreen() {
           margin: 8,
         }}
       >
-        <Button>Create new Donation</Button>
+        <Button
+          onPress={() => {
+            router.push("/(tabs)/(donate)/createDonation");
+          }}
+          accessoryLeft={
+            <IconSymbol size={16} name="plus.app.fill" color="green" />
+          }
+          appearance="outline"
+          status="primary"
+          style={{
+            width: "100%",
+          }}
+        >
+          Create new Donation
+        </Button>
       </Layout>
       <FlatList
         style={{ backgroundColor: "#f5f5f5", paddingHorizontal: 8 }}
