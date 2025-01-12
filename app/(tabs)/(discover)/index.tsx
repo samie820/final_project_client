@@ -8,6 +8,7 @@ import { Button, Layout, Card, Text, Input } from "@ui-kitten/components";
 import Animated from "react-native-reanimated";
 import messaging from "@react-native-firebase/messaging";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { router } from "expo-router";
 
 const mockedDonations = [
   {
@@ -68,8 +69,7 @@ export default function DonationListScreen() {
   const insets = useSafeAreaInsets();
   const [location, setLocation] = useState<any>(null);
   const [deviceToken, setDeviceToken] = useState<any>(null);
-  const [locationName, setLocationName] = useState('');
-
+  const [locationName, setLocationName] = useState("");
 
   const fetchMatchedDonations = async () => {
     try {
@@ -134,6 +134,9 @@ export default function DonationListScreen() {
 
   const renderItem = ({ item }: { item: any }) => (
     <Card
+      onPress={() => {
+        router.push("/(tabs)/(discover)/donationDetail");
+      }}
       style={styles.card}
       footer={<Text>Expires At: {item.expires_at}</Text>}
     >
@@ -182,7 +185,11 @@ export default function DonationListScreen() {
         <Text>{locationName}</Text>
       </Layout>
       <FlatList
-        style={{ backgroundColor: "#f5f5f5", paddingHorizontal: 8 }}
+        style={{
+          backgroundColor: "#f5f5f5",
+          paddingHorizontal: 8,
+          paddingTop: 16,
+        }}
         data={donations}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}

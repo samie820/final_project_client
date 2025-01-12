@@ -17,6 +17,10 @@ const MAPPING = {
   'location.fill': 'location-on',
   'fork.knife.circle.fill': 'food-bank',
   'plus.app.fill': 'add-circle',
+  'bag': 'shopping-bag',
+  'star.square.fill': 'stars',
+  'clock': 'access-time',
+
 } as Partial<
   Record<
     import('expo-symbols').SymbolViewProps['name'],
