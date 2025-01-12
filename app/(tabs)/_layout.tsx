@@ -54,6 +54,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus.app.fill" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="(my_requests)"
+        options={{
+          title: 'Me',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.crop.circle.fill" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }

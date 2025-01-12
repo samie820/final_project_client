@@ -20,6 +20,12 @@ const MAPPING = {
   'bag': 'shopping-bag',
   'star.square.fill': 'stars',
   'clock': 'access-time',
+  'hands.and.sparkles.fill': 'stars',
+  'takeoutbag.and.cup.and.straw.fill': 'stars',
+  'tree': 'stars',
+  'person.crop.circle.fill': 'person',
+  'car.circle': 'directions-car',
+  'calendar': 'calendar-month',
 
 } as Partial<
   Record<

@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import * as Location from "expo-location";
-import { Button, Layout, Card, Text, Input } from "@ui-kitten/components";
+import { Button, Layout, Card, Text, Input, ButtonGroup } from "@ui-kitten/components";
 import Animated from "react-native-reanimated";
 import messaging from "@react-native-firebase/messaging";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -97,6 +97,7 @@ export default function DonationDetailScreen() {
         <ScrollView
           style={{
             padding: 16,
+            flex: 1,
           }}
         >
           <Layout
@@ -300,7 +301,17 @@ export default function DonationDetailScreen() {
                   Still fresh
                 </Text>
               </Layout>
+
+
             </Layout>
+          </Layout>
+
+          <Layout style={{
+            marginBottom: 100,
+          }}>
+          <Button status='success' style={{
+            marginBottom: 8
+          }}>Reserve</Button>
           </Layout>
         </ScrollView>
       </Layout>
