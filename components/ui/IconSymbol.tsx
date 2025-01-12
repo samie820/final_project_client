@@ -26,6 +26,7 @@ const MAPPING = {
   'person.crop.circle.fill': 'person',
   'car.circle': 'directions-car',
   'calendar': 'calendar-month',
+  'paperplane': 'send',
 
 } as Partial<
   Record<

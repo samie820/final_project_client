@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { View, FlatList, StyleSheet, Alert } from "react-native";
+import React from "react";
+import { View, FlatList, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Layout, Card, Text, Input } from "@ui-kitten/components";
-import Animated from "react-native-reanimated";
+import { Layout, Card, Text } from "@ui-kitten/components";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { router } from "expo-router";
 
@@ -13,6 +12,7 @@ const mockedMenu = [
     description:
       "Donations you have reserved that you can collect yourself or find a volunteer to pick it up for you",
     icon: "fork.knife.circle.fill",
+    link: '/(tabs)/(my_requests)/reservedDonations'
   },
   {
     id: 3,
@@ -20,39 +20,47 @@ const mockedMenu = [
     description:
       "As a volunteer, click here to see a list of requests made my donation recipients",
     icon: "car.circle",
+    link: '/(tabs)/(my_requests)/reservedDonations'
   },
   {
     id: 4,
     name: "Manage Schedule",
     description: "As a volunteer, manage your weekly availability",
     icon: "calendar",
+    link: '/(tabs)/(my_requests)/reservedDonations'
   },
 ];
 
-export default function PastDonationListScreen() {
-  const [menu, setMenu] = useState(mockedMenu);
-  const [loading, setLoading] = useState(false);
+export default function MenuScreen() {
   const insets = useSafeAreaInsets();
 
   const renderItem = ({ item }: { item: any }) => (
-    <Card style={styles.card}>
+    <Card
+      onPress={() => {
+        router.push(item.link);
+      }}
+      style={styles.card}
+    >
       <Layout
         style={{
           flexDirection: "row",
           width: "100%",
           justifyContent: "space-between",
-          alignItems: 'center'
+          alignItems: "center",
+          backgroundColor: "transparent",
         }}
       >
         <Layout
           style={{
             width: "80%",
+            backgroundColor: "transparent",
           }}
         >
           <Layout
             style={{
               flexDirection: "row",
               alignItems: "center",
+              backgroundColor: "transparent",
             }}
           >
             <IconSymbol size={28} name={item.icon} color="green" />
@@ -68,7 +76,7 @@ export default function PastDonationListScreen() {
           <Text
             style={{
               fontSize: 14,
-              marginTop: 8
+              marginTop: 8,
             }}
           >
             {item.description}
@@ -82,7 +90,11 @@ export default function PastDonationListScreen() {
   return (
     <Layout style={{ flex: 1, paddingTop: insets.top }}>
       <FlatList
-        style={{ backgroundColor: "#f5f5f5", paddingHorizontal: 8 }}
+        style={{
+          backgroundColor: "#f5f5f5",
+          paddingHorizontal: 8,
+          marginTop: 8,
+        }}
         data={mockedMenu}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}

@@ -5,6 +5,7 @@ export default function MyRequestLayout() {
   return (
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="reservedDonations" options={{ headerTitle: 'My Reserved Donations', headerBackTitle: 'Back' }} />
     </Stack>
   );
 }
