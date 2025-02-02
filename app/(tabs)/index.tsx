@@ -17,6 +17,7 @@ import {
 } from "@ui-kitten/components";
 import Animated from "react-native-reanimated";
 import messaging from "@react-native-firebase/messaging";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 
 export default function HomeScreen() {
   const [donations, setDonations] = useState([]);
@@ -24,7 +25,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [location, setLocation] = useState<any>(null);
   const [deviceToken, setDeviceToken] = useState<any>(null);
-
 
   const fetchDeviceLocation = async () => {
     try {
@@ -65,7 +65,6 @@ export default function HomeScreen() {
       messaging()
         .getToken()
         .then((token) => {
-
           //   Alert.alert(token);
           setDeviceToken(token);
         });
@@ -102,7 +101,6 @@ export default function HomeScreen() {
     fetchDeviceLocation();
   }, []);
 
-
   if (loading) {
     return (
       <View style={{ paddingTop: insets.top }}>
@@ -113,42 +111,92 @@ export default function HomeScreen() {
 
   return (
     <Layout style={{ flex: 1 }}>
-      <SafeAreaView style={{
-        maxHeight: '80%',
-        flex: 1,
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16
-      }}>
-        <Card style={{
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginVertical: 16
-        }}>
-          <Text category='h4'>Total Food Rescued</Text>
-          <Text style={{
-            textAlign: 'center'
-          }} category='h4'>100</Text>
+      <SafeAreaView
+        style={{
+          maxHeight: "80%",
+          flex: 1,
+          flexDirection: "column",
+          justifyContent: "space-between",
+          paddingHorizontal: 16,
+        }}
+      >
+        <Card
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            marginVertical: 16,
+          }}
+        >
+          <Layout
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              width: '100%'
+            }}
+          >
+            <IconSymbol size={32} name="fork.knife.circle.fill" color="green" />
+            <Text category="h4">Total Food Rescued</Text>
+          </Layout>
+          <Text
+            style={{
+              textAlign: "center",
+            }}
+            category="h4"
+          >
+            100
+          </Text>
         </Card>
-        <Card style={{
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginVertical: 16
-        }}>
-          <Text category='h4'>Total Food Donated</Text>
-          <Text style={{
-            textAlign: 'center'
-          }} category='h4'>100</Text>
+        <Card
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            marginVertical: 16,
+          }}
+        >
+          <Layout
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              width: '100%'
+            }}
+          >
+            <IconSymbol size={32} name="fork.knife.circle.fill" color="green" />
+            <Text category="h4">Total Food Donated</Text>
+          </Layout>
+          <Text
+            style={{
+              textAlign: "center",
+            }}
+            category="h4"
+          >
+            100
+          </Text>
         </Card>
-        <Card style={{
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginVertical: 16
-        }}>
-          <Text category='h4'>Total Food Distributed</Text>
-          <Text style={{
-            textAlign: 'center'
-          }} category='h4'>100</Text>
+        <Card
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            marginVertical: 16,
+          }}
+        >
+          <Layout
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              width: '100%'
+            }}
+          >
+            <IconSymbol size={32} name="car.circle" color="green" />
+            <Text category="h4">Total Food Distributed</Text>
+          </Layout>
+          <Text
+            style={{
+              textAlign: "center",
+            }}
+            category="h4"
+          >
+            100
+          </Text>
         </Card>
       </SafeAreaView>
     </Layout>

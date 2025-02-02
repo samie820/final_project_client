@@ -1,178 +1,140 @@
 import React, { useState, useEffect } from "react";
 import { View, FlatList, StyleSheet, Alert } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import * as Location from "expo-location";
 import { Button, Layout, Card, Text, Input } from "@ui-kitten/components";
 import Animated from "react-native-reanimated";
-import messaging from "@react-native-firebase/messaging";
+import { IconSymbol } from "@/components/ui/IconSymbol";
+import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+const mockedDonations = [
+  {
+    id: 2,
+    food_type: "Bread",
+    quantity: 10,
+    location: "40.7128,-74.0060",
+    image:
+      "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_1cYwq8W.jpg",
+    expires_at: "2024-12-01T12:00:00Z",
+    distance: 0.0,
+    status: "PENDING_COLLECTION",
+  },
+  {
+    id: 3,
+    food_type: "Bread",
+    quantity: 13,
+    location: "40.6948,-74.0060",
+    image:
+      "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_GARBdlL.jpg",
+    expires_at: "2024-12-01T12:00:00Z",
+    distance: 1.9988673661405774,
+    status: "PENDING_COLLECTION",
+  },
+];
 
 export default function VolunteerScreen() {
-  const [donations, setDonations] = useState([]);
+  const [donations, setDonations] = useState(mockedDonations);
   const [loading, setLoading] = useState(false);
-  const insets = useSafeAreaInsets();
-  const [location, setLocation] = useState<any>(null);
-  const [deviceToken, setDeviceToken] = useState<any>(null);
-
-  const fetchMatchedDonations = async () => {
-    try {
-      const token = await AsyncStorage.getItem("accessToken");
-      console.log("current device location", location);
-      const { coords } = location;
-      const { latitude, longitude } = coords || {};
-      const response = await axios.get(
-        `http://127.0.0.1:8000/api/donations/active?location=${latitude},${longitude}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setDonations(response.data);
-      console.log(response.data);
-    } catch (error) {
-      console.error(error);
-      // Alert.alert("Error", "Failed to fetch matched donations.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchDeviceLocation = async () => {
-    try {
-      // Request permissions
-
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      console.log("location request status", status);
-      if (status !== "granted") {
-        // setErrorMsg("Permission to access location was denied");
-        return;
-      }
-
-      // Get the current location
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Lowest,
-      });
-      setLocation(location);
-    } catch (error) {
-      // setErrorMsg("Error fetching location");
-      console.error(error);
-    }
-  };
-
-  const requestPermissionForPushNotifications = async () => {
-    const authStatus = await messaging().requestPermission();
-
-    const enabled =
-      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-    if (enabled) {
-      console.log("Auth status:", authStatus);
-      return true;
-    }
-    return false;
-  };
-
-  const getDeviceToken = async () => {
-    if (await requestPermissionForPushNotifications()) {
-      messaging()
-        .getToken()
-        .then((token) => {
-          console.log("device token: ", token);
-
-        //   Alert.alert(token);
-          setDeviceToken(token);
-        });
-    } else {
-      console.log("No device token");
-    }
-
-    messaging()
-      .getInitialNotification()
-      .then(async (remoteMessage) => {
-        if (remoteMessage) {
-          console.log("remote message", remoteMessage.notification);
-        }
-      });
-
-    messaging().onNotificationOpenedApp((remoteMessage) => {
-      console.log(
-        "Notification opened from background",
-        remoteMessage.notification
-      );
-    });
-
-    messaging().setBackgroundMessageHandler(async (backgroundMessage) => {
-      console.log("Message handled in the background", backgroundMessage);
-    });
-
-    messaging().onMessage(async (remoteMessage) => {
-      Alert.alert("FCM Remote message: ", JSON.stringify(remoteMessage));
-    });
-  };
-
-  useEffect(() => {
-    getDeviceToken();
-  }, []);
-
-  useEffect(() => {
-    if (location != null) {
-      fetchMatchedDonations();
-    }
-  }, [location]);
 
   const renderItem = ({ item }: { item: any }) => (
-    <Card style={styles.card} status="primary">
+    <Card style={styles.card}>
       <Animated.Image
-        resizeMode="stretch"
+        resizeMode="cover"
         src={`http://127.0.0.1:8000${item.image}`}
         style={{
-          width: "100%",
-          height: "50%",
+          width: "110%",
+          height: "60%",
+          marginLeft: -16,
+          marginRight: 0,
+          borderRadius: 16,
+          marginBottom: 8,
         }}
       />
       <Text style={styles.foodType}>{item.food_type}</Text>
-      <Text>Quantity: {item.quantity}</Text>
-      <Text>Distance: {item.distance.toFixed(2)} km</Text>
-      <Text>Expires At: {item.expires_at}</Text>
+      <Text>{item.distance.toFixed(2)} km away from you</Text>
+      <Layout>
+        <Text
+          style={{
+            marginTop: 8,
+          }}
+        >
+          Pickup expires At: {item.expires_at}
+        </Text>
+        <Layout
+          style={{
+            flexDirection: "row",
+            width: "100%",
+            justifyContent: "space-between",
+            marginTop: 8,
+          }}
+        >
+          {item.status === "PENDING_COLLECTION" ? (
+            <>
+              <Button
+                onPress={() => {
+                  router.push("/(tabs)/(my_requests)/findVolunteers");
+                }}
+                style={{
+                  width: "100%",
+                }}
+              >
+                Notify Recipient
+              </Button>
+            </>
+          ) : null}
+
+          {item.status === "TO_BE_COLLECTED" ? (
+            <>
+              <Button
+                status="success"
+                accessoryLeft={
+                  <IconSymbol size={28} name="paperplane" color="green" />
+                }
+                style={{
+                  width: "100%",
+                }}
+              >
+                Track Order
+              </Button>
+            </>
+          ) : null}
+        </Layout>
+      </Layout>
     </Card>
   );
 
-  if (location == null) {
-    return (
-      <Layout style={styles.container}>
-        <View style={{ paddingTop: insets.top }}>
-          <Button
-            onPress={() => {
-              fetchDeviceLocation();
-            }}
-            appearance="filled"
-          >
-            Let's get your location
-          </Button>
-          <Input value={deviceToken} />
-        </View>
-      </Layout>
-    );
-  }
-
   if (loading) {
     return (
-      <View style={{ paddingTop: insets.top }}>
+      <View>
         <Text>Loading donations...</Text>
       </View>
     );
   }
 
   return (
-    <Layout style={{ flex: 1 }}>
-      <FlatList
-        style={{ paddingTop: insets.top, flex: 1 }}
-        data={donations}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderItem}
-      />
-    </Layout>
+    <SafeAreaView style={{ flex: 1 }}>
+      <Layout style={{ flex: 1 }}>
+        <Layout
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            margin: 16,
+          }}
+        >
+          <IconSymbol size={16} name="location.fill" color="blue" />
+          <Text style={{
+            marginStart: 8
+          }} category="s1">Reserved Donations Near You</Text>
+        </Layout>
+        <FlatList
+          style={{ backgroundColor: "#f5f5f5", paddingHorizontal: 8 }}
+          data={donations}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderItem}
+          ListFooterComponent={<View style={{ height: 100 }} />}
+        />
+      </Layout>
+    </SafeAreaView>
   );
 }
 
@@ -183,16 +145,14 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
+    borderRadius: 24,
     marginBottom: 10,
-    minHeight: 250,
+    minHeight: 350,
   },
   foodType: {
     fontSize: 18,
     fontWeight: "bold",
+    marginBottom: 8,
   },
   layout: {
     flex: 1,
