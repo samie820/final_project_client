@@ -1,9 +1,20 @@
 import React from "react";
 import { View, FlatList, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Layout, Card, Text } from "@ui-kitten/components";
+import {
+  Layout,
+  Card,
+  Text,
+  TopNavigation,
+  MenuItem,
+  OverflowMenu,
+  TopNavigationAction,
+  Icon,
+  IconElement,
+} from "@ui-kitten/components";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { router } from "expo-router";
+import { useSession } from "@/components/AuthContext";
 
 const mockedMenu = [
   {
@@ -12,7 +23,7 @@ const mockedMenu = [
     description:
       "Donations you have reserved that you can collect yourself or find a volunteer to pick it up for you",
     icon: "fork.knife.circle.fill",
-    link: '/(tabs)/(my_requests)/reservedDonations'
+    link: "/(tabs)/(my_requests)/reservedDonations",
   },
   {
     id: 3,
@@ -20,19 +31,24 @@ const mockedMenu = [
     description:
       "As a volunteer, click here to see a list of requests made by donation recipients",
     icon: "car.circle",
-    link: '/(tabs)/(my_requests)/reservedDonations'
+    link: "/(tabs)/(my_requests)/reservedDonations",
   },
   {
     id: 4,
     name: "Manage Schedule",
     description: "As a volunteer, manage your weekly availability",
     icon: "calendar",
-    link: '/(tabs)/(my_requests)/reservedDonations'
+    link: "/(tabs)/(my_requests)/reservedDonations",
   },
 ];
 
+const LogoutIcon = (): IconElement => (
+  <IconSymbol size={28} name="square.and.arrow.up" color="black" />
+);
+
 export default function MenuScreen() {
   const insets = useSafeAreaInsets();
+  const { signOut } = useSession();
 
   const renderItem = ({ item }: { item: any }) => (
     <Card
@@ -87,8 +103,18 @@ export default function MenuScreen() {
     </Card>
   );
 
+  const renderMenuAction = (): React.ReactElement => (
+    <TopNavigationAction
+      icon={LogoutIcon}
+      onPress={() => {
+        signOut();
+      }}
+    />
+  );
+
   return (
     <Layout style={{ flex: 1, paddingTop: insets.top }}>
+      <TopNavigation accessoryRight={renderMenuAction} />
       <FlatList
         style={{
           backgroundColor: "#f5f5f5",
