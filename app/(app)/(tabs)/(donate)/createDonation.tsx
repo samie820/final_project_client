@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Image, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Layout, Input, Datepicker, Text } from "@ui-kitten/components";
+import { Button, Layout, Input, Datepicker, Text, Spinner } from "@ui-kitten/components";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
@@ -12,6 +12,7 @@ export default function CreateDonationScreen() {
   const { session, isLoading } = useSession();
   console.log("session ======>", session);
   const [foodType, setFoodType] = useState("");
+  const [isSubmitting, setSubmitting ] = useState(false);
   const [quantity, setFoodQuantity] = useState("");
   const [pickupLocation, setPickupLocation] = useState<{
     latitude: number;
@@ -37,6 +38,7 @@ export default function CreateDonationScreen() {
 
   const handleCreateDonation = async () => {
     try {
+      setSubmitting(true);
       // Prepare FormData
       const formData = new FormData();
 
@@ -65,8 +67,6 @@ export default function CreateDonationScreen() {
         } as any);
       }
 
-      console.log("formData", formData);
-      console.log("session?.access", session?.access);
       const response = await fetch(
         "http://127.0.0.1:8000/api/donations/create/",
         {
@@ -93,8 +93,11 @@ export default function CreateDonationScreen() {
       setPickupLocation(null);
       setExpiration(new Date());
       setImage(null);
+
+      setSubmitting(false);
     } catch (error) {
       console.error("Error creating donation:", error);
+      setSubmitting(false);
     }
   };
 
@@ -124,6 +127,7 @@ export default function CreateDonationScreen() {
   useEffect(() => {
     fetchDeviceLocation();
   }, []);
+
 
   return (
     <Layout style={{ flex: 1, paddingTop: insets.top }}>
@@ -210,9 +214,12 @@ export default function CreateDonationScreen() {
       >
         <Button
           accessoryLeft={
-            <IconSymbol size={16} name="plus.app.fill" color="green" />
+            isSubmitting && (
+              <Spinner size="small" />
+            )
           }
-          appearance="solid"
+          disabled={isSubmitting}
+          appearance="outline"
           onPress={handleCreateDonation}
           status="primary"
           style={{
