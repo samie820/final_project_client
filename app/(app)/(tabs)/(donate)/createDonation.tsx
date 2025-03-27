@@ -1,20 +1,26 @@
-import React, { useState } from "react";
-import { StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Image, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Layout, Input } from "@ui-kitten/components";
+import { Button, Layout, Input, Datepicker, Text } from "@ui-kitten/components";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
+import { useSession } from "@/components/AuthContext";
 
 export default function CreateDonationScreen() {
   const insets = useSafeAreaInsets();
+  const { session, isLoading } = useSession();
+  console.log("session ======>", session);
   const [foodType, setFoodType] = useState("");
   const [quantity, setFoodQuantity] = useState("");
-  const [pickupLocation, setPickupLocation] = useState("");
-  const [expiration, setExpiration] = useState("");
+  const [pickupLocation, setPickupLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [expiration, setExpiration] = useState(new Date());
   const [image, setImage] = useState<string | null>(null);
 
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: true,
@@ -29,44 +35,171 @@ export default function CreateDonationScreen() {
     }
   };
 
+  const handleCreateDonation = async () => {
+    try {
+      // Prepare FormData
+      const formData = new FormData();
+
+      formData.append("food_type", foodType);
+      formData.append("quantity", quantity);
+      formData.append(
+        "location",
+        pickupLocation
+          ? `${pickupLocation.latitude},${pickupLocation.longitude}`
+          : ""
+      );
+      // Make sure the date is converted to a string if needed
+      formData.append("expires_at", expiration.toISOString());
+
+      // Append the image to formData if any
+      if (image) {
+        const filename = image.split("/").pop() || "photo.jpg";
+        // Infer the type of the image
+        const match = /\.(\w+)$/.exec(filename);
+        const mimeType = match ? `image/${match[1]}` : `image`;
+
+        formData.append("image", {
+          uri: image,
+          name: filename,
+          type: mimeType,
+        } as any);
+      }
+
+      console.log("formData", formData);
+      console.log("session?.access", session?.access);
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/donations/create/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${session?.access}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorRes = await response.text();
+        throw new Error(`Request failed: ${errorRes}`);
+      }
+
+      const data = await response.json();
+      console.log("Donation created successfully:", data);
+
+      // Clear fields or navigate away as needed
+      setFoodType("");
+      setFoodQuantity("");
+      setPickupLocation(null);
+      setExpiration(new Date());
+      setImage(null);
+    } catch (error) {
+      console.error("Error creating donation:", error);
+    }
+  };
+
+  const fetchDeviceLocation = async () => {
+    try {
+      // Request permissions
+
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        // setErrorMsg("Permission to access location was denied");
+        return;
+      }
+
+      // Get the current location
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Lowest,
+      });
+      const { coords } = location;
+      const { latitude, longitude } = coords || {};
+      setPickupLocation({ latitude, longitude });
+    } catch (error) {
+      // setErrorMsg("Error fetching location");
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchDeviceLocation();
+  }, []);
+
   return (
     <Layout style={{ flex: 1, paddingTop: insets.top }}>
-      <Layout>
+      <Layout
+        style={{
+          paddingHorizontal: 8,
+        }}
+      >
         <Input
+          label={"Food Type"}
           placeholder="Enter Food Type"
           value={foodType}
           onChangeText={(nextValue) => setFoodType(nextValue)}
+          style={{
+            marginBottom: 8,
+          }}
         />
         <Input
+          label={"Quantity"}
           placeholder="Enter Number of Items"
           value={quantity}
           onChangeText={(nextValue) => setFoodQuantity(nextValue)}
+          style={{
+            marginBottom: 8,
+          }}
         />
         <Input
-          placeholder="Enter Location for pickup"
-          value={pickupLocation}
-          onChangeText={(nextValue) => setPickupLocation(nextValue)}
+          label={"Pickup Location"}
+          placeholder="Your current location will be used"
+          value={
+            pickupLocation
+              ? `${pickupLocation.latitude}, ${pickupLocation.longitude}`
+              : ""
+          }
+          disabled={true}
+          style={{
+            marginBottom: 8,
+          }}
         />
-        <Input
-          placeholder="Enter when donation expires"
-          value={expiration}
-          onChangeText={(nextValue) => setExpiration(nextValue)}
+        <Text
+          style={{
+            marginVertical: 8,
+          }}
+        >
+          Expiration Date
+        </Text>
+        <Datepicker
+          date={expiration}
+          onSelect={(nextDate) => setExpiration(nextDate)}
         />
         <Button
           accessoryLeft={
             <IconSymbol size={16} name="plus.app.fill" color="green" />
           }
           onPress={() => {
-            pickImage()
+            pickImage();
           }}
           appearance="outline"
           status="primary"
           style={{
-            width: "100%",
+            width: "80%",
+            alignSelf: "center",
+            marginTop: 16,
           }}
         >
           Select Image
         </Button>
+        {/* Show a preview if the user has picked an image */}
+        {image && (
+          <Layout style={{ marginTop: 16, alignItems: "center" }}>
+            <Image
+              source={{ uri: image }}
+              style={{ width: 150, height: 150, borderRadius: 8 }}
+            />
+          </Layout>
+        )}
       </Layout>
       <Layout
         style={{
@@ -79,10 +212,12 @@ export default function CreateDonationScreen() {
           accessoryLeft={
             <IconSymbol size={16} name="plus.app.fill" color="green" />
           }
-          appearance="outline"
+          appearance="solid"
+          onPress={handleCreateDonation}
           status="primary"
           style={{
             width: "100%",
+            marginTop: 24,
           }}
         >
           Create new Donation

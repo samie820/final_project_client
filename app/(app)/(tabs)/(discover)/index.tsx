@@ -9,78 +9,25 @@ import Animated from "react-native-reanimated";
 import messaging from "@react-native-firebase/messaging";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { router } from "expo-router";
-
-const mockedDonations = [
-  {
-    id: 2,
-    food_type: "Bread",
-    quantity: 10,
-    location: "40.7128,-74.0060",
-    image:
-      "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_1cYwq8W.jpg",
-    expires_at: "2024-12-01T12:00:00Z",
-    distance: 0.0,
-  },
-  {
-    id: 3,
-    food_type: "Bread",
-    quantity: 13,
-    location: "40.6948,-74.0060",
-    image:
-      "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_GARBdlL.jpg",
-    expires_at: "2024-12-01T12:00:00Z",
-    distance: 1.9988673661405774,
-  },
-  {
-    id: 4,
-    food_type: "Sandwich - Novotel",
-    quantity: 13,
-    location: "40.7578,-74.0060",
-    image:
-      "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_NgGpCUy.jpg",
-    expires_at: "2024-12-01T12:00:00Z",
-    distance: 4.99719577390573,
-  },
-  {
-    id: 5,
-    food_type: "Sandwich - Novotel",
-    quantity: 13,
-    location: "40.7578,-74.0060",
-    image:
-      "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_d161RVJ.jpg",
-    expires_at: "2024-12-01T12:00:00Z",
-    distance: 4.99719577390573,
-  },
-  {
-    id: 6,
-    food_type: "Sandwich - Greenwich",
-    quantity: 13,
-    location: "40.7578,-74.0060",
-    image:
-      "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_lG4tmdC.jpg",
-    expires_at: "2024-12-01T12:00:00Z",
-    distance: 4.99719577390573,
-  },
-];
+import { useSession } from "@/components/AuthContext";
 
 export default function DonationListScreen() {
-  const [donations, setDonations] = useState(mockedDonations);
+  const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(false);
   const insets = useSafeAreaInsets();
   const [location, setLocation] = useState<any>(null);
   const [deviceToken, setDeviceToken] = useState<any>(null);
   const [locationName, setLocationName] = useState("");
+  const { session, isLoading } = useSession();
 
   const fetchMatchedDonations = async () => {
     try {
-      const token = await AsyncStorage.getItem("accessToken");
-      console.log("current device location", location);
-      const { coords } = location;
-      const { latitude, longitude } = coords || {};
+      const { latitude, longitude } = location || {};
+      console.log("current device location", latitude, longitude, `http://127.0.0.1:8000/api/donations/active?location=${latitude},${longitude}`);
       const response = await axios.get(
         `http://127.0.0.1:8000/api/donations/active?location=${latitude},${longitude}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${session?.access}` },
         }
       );
       setDonations(response.data);
@@ -103,6 +50,8 @@ export default function DonationListScreen() {
       // Get the current location
       const location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
+
+      console.log("current location", latitude, longitude);
 
       // Perform reverse geocoding
       const reverseGeocode = await Location.reverseGeocodeAsync({
@@ -131,6 +80,33 @@ export default function DonationListScreen() {
     }
     fetchLocationName();
   }, [location]);
+
+  const fetchDeviceLocation = async () => {
+    try {
+      // Request permissions
+
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        // setErrorMsg("Permission to access location was denied");
+        return;
+      }
+
+      // Get the current location
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Lowest,
+      });
+      const { coords } = location;
+      const { latitude, longitude } = coords || {};
+      setLocation({ latitude, longitude });
+    } catch (error) {
+      // setErrorMsg("Error fetching location");
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchDeviceLocation();
+  }, []);
 
   const renderItem = ({ item }: { item: any }) => (
     <Card
