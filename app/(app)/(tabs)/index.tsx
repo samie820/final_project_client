@@ -66,6 +66,7 @@ export default function HomeScreen() {
         .getToken()
         .then((token) => {
           //   Alert.alert(token);
+          console.log("Device token", token);
           setDeviceToken(token);
         });
     } else {
@@ -92,7 +93,8 @@ export default function HomeScreen() {
     });
 
     messaging().onMessage(async (remoteMessage) => {
-      Alert.alert("FCM Remote message: ", JSON.stringify(remoteMessage));
+      console.log({remoteMessage})
+      Alert.alert(remoteMessage?.notification?.title, remoteMessage?.notification?.body);
     });
   };
 

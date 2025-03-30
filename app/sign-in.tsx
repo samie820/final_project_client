@@ -1,5 +1,5 @@
 import { Link, router } from "expo-router";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 
 import { useSession } from "../components/AuthContext";
 import { Button, Input, Layout, Text } from "@ui-kitten/components";
@@ -16,7 +16,7 @@ export default function SignIn() {
 
   const onSignIn = async () => {
     try {
-      const response = await axios.post(`http://127.0.0.1:8000/api/token/`, {
+      const response = await axios.post(Platform.OS == 'android' ? `http://10.0.2.2:8000/api/token/` : `http://127.0.0.1:8000/api/token/`, {
         username: email,
         password,
       });

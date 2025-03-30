@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "941601293653",
+    "project_id": "uol-final-project-46711",
+    "storage_bucket": "uol-final-project-46711.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:941601293653:android:c411cb5da23bae018cdbdc",
+        "android_client_info": {
+          "package_name": "com.iamsammiey.finalproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7YxRGB4YE_j7POIUF8N8j3QMesCrwNeA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
