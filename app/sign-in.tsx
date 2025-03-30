@@ -1,8 +1,8 @@
-import { router } from "expo-router";
-import { Text, View } from "react-native";
+import { Link, router } from "expo-router";
+import { View } from "react-native";
 
 import { useSession } from "../components/AuthContext";
-import { Button, Input, Layout } from "@ui-kitten/components";
+import { Button, Input, Layout, Text } from "@ui-kitten/components";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState } from "react";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -49,15 +49,21 @@ export default function SignIn() {
           alignContent: "center",
         }}
       >
+        <Text category="h1" style={{
+          fontSize: 32,
+          fontWeight: "bold",
+          marginBottom: 16,
+          textAlign: "center",
+        }}>Waste Not</Text>
         <Input
-          placeholder="Email"
-          label={"Email"}
+          placeholder="Username"
+          label={"Username"}
           value={email}
           autoCapitalize="none"
           onChangeText={(nextValue) => setEmail(nextValue)}
         />
         <Input
-          placeholder="Enter Number of Items"
+          placeholder="Enter Password"
           value={password}
           label={"Password"}
           autoCapitalize="none"
@@ -81,6 +87,9 @@ export default function SignIn() {
         >
           Sign In
         </Button>
+        <Link href={"/sign-up"} style={{ marginTop: 16 }}>
+        Don't have an account? Sign Up
+        </Link>
       </Layout>
     </Layout>
   );

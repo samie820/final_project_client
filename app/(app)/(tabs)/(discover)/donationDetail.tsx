@@ -11,10 +11,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import * as Location from "expo-location";
-import { Button, Layout, Card, Text, Input, ButtonGroup } from "@ui-kitten/components";
+import {
+  Button,
+  Layout,
+  Card,
+  Text,
+  Input,
+  ButtonGroup,
+} from "@ui-kitten/components";
 import Animated from "react-native-reanimated";
 import messaging from "@react-native-firebase/messaging";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useLocalSearchParams } from "expo-router";
+import { useSession } from "@/components/AuthContext";
 
 const mockedSingleDonations = {
   id: 6,
@@ -29,30 +38,64 @@ const mockedSingleDonations = {
 ``;
 
 export default function DonationDetailScreen() {
-  const [donationDetail, setDonationDetail] = useState(mockedSingleDonations);
+  const [donationDetail, setDonationDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const insets = useSafeAreaInsets();
 
-  //   const fetchSingleDonations = async () => {
-  //     try {
-  //       const token = await AsyncStorage.getItem("accessToken");
-  //       console.log("current device location", location);
-  //       const { latitude, longitude } = coords || {};
-  //       const response = await axios.get(
-  //         `http://127.0.0.1:8000/api/donations/active?location=${latitude},${longitude}`,
-  //         {
-  //           headers: { Authorization: `Bearer ${token}` },
-  //         }
-  //       );
-  //       console.log(response.data);
-  //     } catch (error) {
-  //       console.error(error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
+  const item = useLocalSearchParams();
+  const { session, isLoading } = useSession();
 
-  if (loading) {
+  const { donationId } = item as { donationId: string };
+
+  const fetchSingleDonations = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `http://127.0.0.1:8000/api/donations/${donationId}/`,
+        {
+          headers: { Authorization: `Bearer ${session?.access}` },
+        }
+      );
+      setLoading(false);
+      setDonationDetail(response.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSingleDonations();
+  }, [donationId]);
+
+  const onReserveDonation = async () => {
+    try {
+      setLoading(true);
+      await axios.post(
+        `http://127.0.0.1:8000/api/donations/${donationId}/reserve/`,
+        {},
+        {
+          headers: {
+            'Authorization': `Bearer ${session?.access}`,
+            'Content-Type': "application/json",
+          },
+        }
+      );
+      setLoading(false);
+      Alert.alert("Success", `You have reserved this donation!`);
+
+      fetchSingleDonations();
+    } catch (error) {
+      console.error(error.response?.data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  console.log("donationDetail", donationDetail);
+
+  if (loading || isLoading || donationDetail == null) {
     return (
       <View style={{ paddingTop: insets.top }}>
         <Text>Loading donations...</Text>
@@ -75,7 +118,7 @@ export default function DonationDetailScreen() {
             height: 150,
             justifyContent: "flex-end",
           }}
-          src={`http://127.0.0.1:8000${donationDetail.image}`}
+          src={donationDetail.image != null ? donationDetail.image : ""}
         >
           <Layout
             style={{
@@ -257,7 +300,11 @@ export default function DonationDetailScreen() {
                   alignItems: "center",
                 }}
               >
-                <IconSymbol size={28} name="hands.and.sparkles.fill" color="green" />
+                <IconSymbol
+                  size={28}
+                  name="hands.and.sparkles.fill"
+                  color="green"
+                />
                 <Text
                   style={{
                     marginStart: 8,
@@ -274,7 +321,11 @@ export default function DonationDetailScreen() {
                   alignItems: "center",
                 }}
               >
-                <IconSymbol size={28} name="takeoutbag.and.cup.and.straw.fill" color="green" />
+                <IconSymbol
+                  size={28}
+                  name="takeoutbag.and.cup.and.straw.fill"
+                  color="green"
+                />
                 <Text
                   style={{
                     marginStart: 8,
@@ -301,17 +352,26 @@ export default function DonationDetailScreen() {
                   Still fresh
                 </Text>
               </Layout>
-
-
             </Layout>
           </Layout>
 
-          <Layout style={{
-            marginBottom: 100,
-          }}>
-          <Button status='success' style={{
-            marginBottom: 8
-          }}>Reserve</Button>
+          <Layout
+            style={{
+              marginBottom: 100,
+            }}
+          >
+            <Button
+              status="success"
+              disabled={donationDetail?.is_reserved_by_me || donationDetail?.is_reserved}
+              onPress={() => {
+                onReserveDonation();
+              }}
+              style={{
+                marginBottom: 8,
+              }}
+            >
+              {donationDetail?.is_reserved_by_me || donationDetail?.is_reserved ? "Reserved" : "Reserve"}
+            </Button>
           </Layout>
         </ScrollView>
       </Layout>

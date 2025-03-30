@@ -6,40 +6,75 @@ import { Button, Layout, Card, Text, Input } from "@ui-kitten/components";
 import Animated from "react-native-reanimated";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { router } from "expo-router";
-const mockedDonations = [
-  {
-    id: 2,
-    food_type: "Bread",
-    quantity: 10,
-    location: "40.7128,-74.0060",
-    image:
-      "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_1cYwq8W.jpg",
-    expires_at: "2024-12-01T12:00:00Z",
-    distance: 0.0,
-    status: "PENDING_COLLECTION",
-  },
-  {
-    id: 3,
-    food_type: "Bread",
-    quantity: 13,
-    location: "40.6948,-74.0060",
-    image:
-      "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_GARBdlL.jpg",
-    expires_at: "2024-12-01T12:00:00Z",
-    distance: 1.9988673661405774,
-    status: "TO_BE_COLLECTED",
-  },
-];
+import { useSession } from "@/components/AuthContext";
 
 export default function ReservedDonationScreen() {
-  const [donations, setDonations] = useState(mockedDonations);
+  const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { session, isLoading } = useSession();
+
+  const fetchReservedDonations = async () => {
+    try {
+      const response = await axios.get(
+        `http://127.0.0.1:8000/api/donations/my-reserved/`,
+        {
+          headers: { Authorization: `Bearer ${session?.access}` },
+        }
+      );
+      setDonations(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReservedDonations();
+  }, []);
+
+  const onRequestSelfPickup = async (donationId: number) => {
+    try {
+      await axios.post(
+        `http://127.0.0.1:8000/api/donations/${donationId}/self-pickup/`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${session?.access}` },
+        }
+      );
+      Alert.alert("Success", "You have successfully requested self pickup.");
+      fetchReservedDonations();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRequestVolunteer = async (donationId: number) => {
+    try {
+      await axios.post(
+        `http://127.0.0.1:8000/api/donations/${donationId}/request-volunteer/`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${session?.access}` },
+        }
+      );
+      Alert.alert("Success", "You have successfully requested for a volunteer.");
+      fetchReservedDonations();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderItem = ({ item }: { item: any }) => (
     <Card style={styles.card}>
       <Animated.Image
         resizeMode="cover"
-        src={`http://127.0.0.1:8000${item.image}`}
+        src={item.image}
         style={{
           width: "110%",
           height: "60%",
@@ -50,7 +85,7 @@ export default function ReservedDonationScreen() {
         }}
       />
       <Text style={styles.foodType}>{item.food_type}</Text>
-      <Text>{item.distance.toFixed(2)} km away from you</Text>
+      <Text>{item?.distance?.toFixed(2) ?? 0} km away from you</Text>
       <Layout>
         <Text
           style={{
@@ -67,12 +102,15 @@ export default function ReservedDonationScreen() {
             marginTop: 8,
           }}
         >
-          {item.status === "PENDING_COLLECTION" ? (
+          {item.collection_status === "PENDING_COLLECTION" ? (
             <>
-              <Button>Pickup Myself</Button>
+              <Button onPress={() => {
+                onRequestSelfPickup(item.id);
+              }}>Pickup Myself</Button>
               <Button
                 onPress={() => {
-                  router.push("/(tabs)/(my_requests)/findVolunteers");
+                  onRequestVolunteer(item.id);
+                  // router.push("/(tabs)/(my_requests)/findVolunteers");
                 }}
               >
                 Request Volunteer
@@ -80,7 +118,8 @@ export default function ReservedDonationScreen() {
             </>
           ) : null}
 
-          {item.status === "TO_BE_COLLECTED" ? (
+          {item.collection_status === "RECIPIENT_SELF_PICKUP" ||
+          item.collection_status === "RECIPIENT_RESERVATION" ? (
             <>
               <Button
                 status="success"
@@ -91,7 +130,36 @@ export default function ReservedDonationScreen() {
                   width: "100%",
                 }}
               >
-                Track Order
+                You're Collecting it
+              </Button>
+            </>
+          ) : null}
+
+          {item.collection_status === "VONTEER_REQUEST_PENDING" ? (
+            <>
+              <Button
+                status="info"
+                style={{
+                  width: "100%",
+                }}
+              >
+                Waiting for Volunteer
+              </Button>
+            </>
+          ) : null}
+
+          {item.collection_status === "TO_BE_COLLECTED_BY_VOLUNTEER" ? (
+            <>
+              <Button
+                status="success"
+                accessoryLeft={
+                  <IconSymbol size={28} name="paperplane" color="green" />
+                }
+                style={{
+                  width: "100%",
+                }}
+              >
+                Track Volunteer
               </Button>
             </>
           ) : null}

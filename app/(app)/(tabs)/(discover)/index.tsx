@@ -111,7 +111,12 @@ export default function DonationListScreen() {
   const renderItem = ({ item }: { item: any }) => (
     <Card
       onPress={() => {
-        router.push("/(tabs)/(discover)/donationDetail");
+        router.push({
+          pathname: "/donationDetail",
+          params: {
+            donationId: item.id,
+          }
+        });
       }}
       style={styles.card}
       footer={<Text>Expires At: {item.expires_at}</Text>}
