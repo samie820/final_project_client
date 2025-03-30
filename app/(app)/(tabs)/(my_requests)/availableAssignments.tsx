@@ -9,21 +9,21 @@ import { router } from "expo-router";
 import { useSession } from "@/components/AuthContext";
 import { format } from "date-fns";
 
-export default function ReservedDonationScreen() {
+export default function AvailableAssignmentScreen() {
   const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(false);
   const { session, isLoading } = useSession();
 
-  const fetchReservedDonations = async () => {
+  const fetchMyAssignments = async () => {
     try {
       const response = await axios.get(
-        `http://127.0.0.1:8000/api/donations/my-reserved/`,
+        `http://127.0.0.1:8000/api/volunteer/my-assignments/`,
         {
           headers: { Authorization: `Bearer ${session?.access}` },
         }
       );
       setDonations(response.data);
-      console.log(response.data);
+      console.log("assignment ", response.data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -32,38 +32,23 @@ export default function ReservedDonationScreen() {
   };
 
   useEffect(() => {
-    fetchReservedDonations();
+    fetchMyAssignments();
   }, []);
 
-  const onRequestSelfPickup = async (donationId: number) => {
+  const onMarkAsPickedUp = async (donationId: number) => {
     try {
       await axios.post(
-        `http://127.0.0.1:8000/api/donations/${donationId}/self-pickup/`,
+        `http://127.0.0.1:8000/api/volunteer/donations/${donationId}/in-transit/`,
         {},
         {
           headers: { Authorization: `Bearer ${session?.access}` },
         }
       );
-      Alert.alert("Success", "You have successfully requested self pickup.");
-      fetchReservedDonations();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onRequestVolunteer = async (donationId: number) => {
-    try {
-      await axios.post(
-        `http://127.0.0.1:8000/api/donations/${donationId}/request-volunteer/`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${session?.access}` },
-        }
+      Alert.alert(
+        "Success",
+        "You have successfully marked this donation as in transit."
       );
-      Alert.alert("Success", "You have successfully requested for a volunteer.");
-      fetchReservedDonations();
+      fetchMyAssignments();
     } catch (error) {
       console.error(error);
     } finally {
@@ -75,25 +60,28 @@ export default function ReservedDonationScreen() {
     <Card style={styles.card}>
       <Animated.Image
         resizeMode="cover"
-        src={item.image}
+        src={`http://127.0.0.1:8000${item.image}`}
         style={{
           width: "110%",
-          height: "60%",
+          height: "40%",
           marginLeft: -16,
           marginRight: 0,
           borderRadius: 16,
           marginBottom: 8,
         }}
       />
-      <Text style={styles.foodType}>{item.food_type}</Text>
-      <Text>{item?.distance?.toFixed(2) ?? 0} km away from you</Text>
+      <Text style={styles.foodType}>Donated by: {item?.donor?.username}</Text>
+      <Text style={styles.foodType}>Donor Email: {item?.donor?.email}</Text>
+      {/* <Text>{item?.distance?.toFixed(2) ?? 0} km away from you</Text> */}
+      <Text>Reserved by: {item?.reserved_by?.username ?? 0}</Text>
+      <Text>Contact Recipient via: {item?.reserved_by?.email ?? 0}</Text>
       <Layout>
         <Text
           style={{
             marginTop: 8,
           }}
         >
-          Pickup expires At: {format(new Date(item.expires_at), 'PP')}
+          Donation expires At: {format(new Date(item.expires_at), "PP")}
         </Text>
         <Layout
           style={{
@@ -103,67 +91,44 @@ export default function ReservedDonationScreen() {
             marginTop: 8,
           }}
         >
-          {item.collection_status === "PENDING_COLLECTION" ? (
+          {item.collection_status === "TO_BE_COLLECTED_BY_VOLUNTEER" &&
+          item.is_in_transit == false ? (
             <>
-              <Button onPress={() => {
-                onRequestSelfPickup(item.id);
-              }}>Pickup Myself</Button>
               <Button
+                status="success"
+                accessoryLeft={
+                  <IconSymbol size={28} name="paperplane" color="green" />
+                }
+                style={{
+                  width: "100%",
+                }}
                 onPress={() => {
-                  onRequestVolunteer(item.id);
-                  // router.push("/(tabs)/(my_requests)/findVolunteers");
+                  onMarkAsPickedUp(item.id);
                 }}
               >
-                Request Volunteer
+                Mark as Picked Up
               </Button>
             </>
           ) : null}
-
-          {item.collection_status === "RECIPIENT_SELF_PICKUP" ||
-          item.collection_status === "RECIPIENT_RESERVATION" ? (
-            <>
-              <Button
-                status="success"
-                accessoryLeft={
-                  <IconSymbol size={28} name="paperplane" color="green" />
-                }
-                style={{
-                  width: "100%",
-                }}
-              >
-                You're Collecting it
-              </Button>
-            </>
-          ) : null}
-
-          {item.collection_status === "VONTEER_REQUEST_PENDING" ? (
-            <>
-              <Button
-                status="info"
-                style={{
-                  width: "100%",
-                }}
-              >
-                Waiting for Volunteer
-              </Button>
-            </>
-          ) : null}
-
-          {item.collection_status === "TO_BE_COLLECTED_BY_VOLUNTEER" ? (
-            <>
-              <Button
-                status="success"
-                accessoryLeft={
-                  <IconSymbol size={28} name="paperplane" color="green" />
-                }
-                style={{
-                  width: "100%",
-                }}
-              >
-                Waiting on Volunteer
-              </Button>
-            </>
-          ) : null}
+          {item.is_in_transit == true && (
+            <Button
+              status="info"
+              accessoryLeft={
+                <IconSymbol size={28} name="paperplane" color="green" />
+              }
+              style={{
+                width: "100%",
+              }}
+              onPress={() => {
+                Alert.alert(
+                  "No action needed",
+                  "Donation is already in transit. No action needed."
+                );
+              }}
+            >
+              Donation in Transit
+            </Button>
+          )}
         </Layout>
       </Layout>
     </Card>

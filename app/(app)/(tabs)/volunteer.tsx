@@ -1,46 +1,99 @@
 import React, { useState, useEffect } from "react";
 import { View, FlatList, StyleSheet, Alert } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { format } from "date-fns";
 import axios from "axios";
 import { Button, Layout, Card, Text, Input } from "@ui-kitten/components";
 import Animated from "react-native-reanimated";
+import * as Location from "expo-location";
+
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-const mockedDonations = [
-  {
-    id: 2,
-    food_type: "Bread",
-    quantity: 10,
-    location: "40.7128,-74.0060",
-    image:
-      "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_1cYwq8W.jpg",
-    expires_at: "2024-12-01T12:00:00Z",
-    distance: 0.0,
-    status: "PENDING_COLLECTION",
-  },
-  {
-    id: 3,
-    food_type: "Bread",
-    quantity: 13,
-    location: "40.6948,-74.0060",
-    image:
-      "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_GARBdlL.jpg",
-    expires_at: "2024-12-01T12:00:00Z",
-    distance: 1.9988673661405774,
-    status: "PENDING_COLLECTION",
-  },
-];
+import { useSession } from "@/components/AuthContext";
 
 export default function VolunteerScreen() {
-  const [donations, setDonations] = useState(mockedDonations);
+  const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { session, isLoading } = useSession();
+  const [location, setLocation] = useState<any>(null);
+
+  const fetchAvailableRequests = async () => {
+    try {
+      const { latitude, longitude } = location || {};
+      console.log("session?.access", session?.access);
+      const response = await axios.get(
+        `http://127.0.0.1:8000/api/volunteer/requests/?location=${latitude},${longitude}`,
+        {
+          headers: { Authorization: `Bearer ${session?.access}` },
+        }
+      );
+      setDonations(response.data);
+    } catch (error) {
+      console.error(error.response?.data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (location != null) {
+      fetchAvailableRequests();
+    }
+  }, [location]);
+
+  const fetchDeviceLocation = async () => {
+    try {
+      // Request permissions
+
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        // setErrorMsg("Permission to access location was denied");
+        return;
+      }
+
+      // Get the current location
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Lowest,
+      });
+      const { coords } = location;
+      const { latitude, longitude } = coords || {};
+      setLocation({ latitude, longitude });
+    } catch (error) {
+      // setErrorMsg("Error fetching location");
+      console.error(error);
+    }
+  };
+
+  const onAcceptVolunteerRequest = async (donationId: number) => {
+    try {
+      await axios.post(
+        `http://127.0.0.1:8000/api/donations/${donationId}/accept-volunteer/`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${session?.access}` },
+        }
+      );
+      Alert.alert(
+        "Success",
+        "You have successfully accepted this pickup request."
+      );
+      fetchAvailableRequests();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDeviceLocation();
+  }, []);
 
   const renderItem = ({ item }: { item: any }) => (
     <Card style={styles.card}>
       <Animated.Image
         resizeMode="cover"
-        src={`http://127.0.0.1:8000${item.image}`}
+        src={item.image}
         style={{
           width: "110%",
           height: "60%",
@@ -51,14 +104,14 @@ export default function VolunteerScreen() {
         }}
       />
       <Text style={styles.foodType}>{item.food_type}</Text>
-      <Text>{item.distance.toFixed(2)} km away from you</Text>
+      <Text>{item.distance?.toFixed(2)} km away from you</Text>
       <Layout>
         <Text
           style={{
             marginTop: 8,
           }}
         >
-          Pickup expires At: {item.expires_at}
+          Pickup expires At: {format(new Date(item.expires_at), "PP")}
         </Text>
         <Layout
           style={{
@@ -68,33 +121,30 @@ export default function VolunteerScreen() {
             marginTop: 8,
           }}
         >
-          {item.status === "PENDING_COLLECTION" ? (
+          {item.collection_status === "VONTEER_REQUEST_PENDING" ? (
             <>
               <Button
                 onPress={() => {
-                  router.push("/(tabs)/(my_requests)/findVolunteers");
+                  // router.push("/(tabs)/(my_requests)/findVolunteers");
+                  onAcceptVolunteerRequest(item.id);
                 }}
                 style={{
                   width: "100%",
                 }}
               >
-                Notify Recipient
+                Accept Request to Pick Up
               </Button>
             </>
           ) : null}
 
-          {item.status === "TO_BE_COLLECTED" ? (
+          {item.collection_status === "TO_BE_COLLECTED_BY_VOLUNTEER" ? (
             <>
               <Button
-                status="success"
-                accessoryLeft={
-                  <IconSymbol size={28} name="paperplane" color="green" />
-                }
                 style={{
                   width: "100%",
                 }}
               >
-                Track Order
+                Contact Recipient
               </Button>
             </>
           ) : null}
@@ -103,11 +153,41 @@ export default function VolunteerScreen() {
     </Card>
   );
 
-  if (loading) {
+  if (loading || isLoading) {
     return (
       <View>
         <Text>Loading donations...</Text>
       </View>
+    );
+  }
+
+  if (!donations.length) {
+    return (
+      <SafeAreaView style={{ flex: 1 }}>
+        <Layout style={{ flex: 1 }}>
+          <Layout style={styles.layout}>
+            <IconSymbol size={48} name="checkmark.circle.fill" color="green" />
+            <Text
+              style={{
+                marginTop: 16,
+                textAlign: "center",
+              }}
+              category="h5"
+            >
+              No Requests Available
+            </Text>
+            <Text
+              style={{
+                marginTop: 8,
+                textAlign: "center",
+              }}
+              category="s1"
+            >
+              Check back later for new requests.
+            </Text>
+          </Layout>
+        </Layout>
+      </SafeAreaView>
     );
   }
 
@@ -122,9 +202,14 @@ export default function VolunteerScreen() {
           }}
         >
           <IconSymbol size={16} name="location.fill" color="blue" />
-          <Text style={{
-            marginStart: 8
-          }} category="s1">Reserved Donations Near You</Text>
+          <Text
+            style={{
+              marginStart: 8,
+            }}
+            category="s1"
+          >
+            Volunteer Requests Near You
+          </Text>
         </Layout>
         <FlatList
           style={{ backgroundColor: "#f5f5f5", paddingHorizontal: 8 }}

@@ -77,7 +77,7 @@ export default function SignUp() {
           ? `${pickupLocation.latitude},${pickupLocation.longitude}`
           : "",
       });
-      signIn(response.data);
+    //   signIn(response.data);
       router.replace("/");
       console.log(response.data);
     } catch (error) {

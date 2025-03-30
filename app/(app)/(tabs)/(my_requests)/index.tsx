@@ -31,7 +31,7 @@ const mockedMenu = [
     description:
       "As a volunteer, click here to see a list of requests made by donation recipients",
     icon: "car.circle",
-    link: "/(tabs)/(my_requests)/reservedDonations",
+    link: "/(tabs)/(my_requests)/availableAssignments",
   },
   {
     id: 4,

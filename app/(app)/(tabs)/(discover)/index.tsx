@@ -10,6 +10,7 @@ import messaging from "@react-native-firebase/messaging";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { router } from "expo-router";
 import { useSession } from "@/components/AuthContext";
+import { format } from "date-fns";
 
 export default function DonationListScreen() {
   const [donations, setDonations] = useState([]);
@@ -23,6 +24,7 @@ export default function DonationListScreen() {
   const fetchMatchedDonations = async () => {
     try {
       const { latitude, longitude } = location || {};
+      console.log('session?.access discover page', session?.access)
       console.log("current device location", latitude, longitude, `http://127.0.0.1:8000/api/donations/active?location=${latitude},${longitude}`);
       const response = await axios.get(
         `http://127.0.0.1:8000/api/donations/active?location=${latitude},${longitude}`,
@@ -119,7 +121,7 @@ export default function DonationListScreen() {
         });
       }}
       style={styles.card}
-      footer={<Text>Expires At: {item.expires_at}</Text>}
+      footer={<Text>Expires At: {format(new Date(item.expires_at), 'PP')}</Text>}
     >
       <Animated.Image
         resizeMode="cover"

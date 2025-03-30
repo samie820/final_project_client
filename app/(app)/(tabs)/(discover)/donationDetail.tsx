@@ -25,18 +25,6 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useLocalSearchParams } from "expo-router";
 import { useSession } from "@/components/AuthContext";
 
-const mockedSingleDonations = {
-  id: 6,
-  food_type: "Sandwich - Greenwich",
-  quantity: 13,
-  location: "40.7578,-74.0060",
-  image:
-    "/media/donation_images/calle-macarone-Vl78eNdiJaQ-unsplash_lG4tmdC.jpg",
-  expires_at: "2024-12-01T12:00:00Z",
-  distance: 4.99719577390573,
-};
-``;
-
 export default function DonationDetailScreen() {
   const [donationDetail, setDonationDetail] = useState(null);
   const [loading, setLoading] = useState(false);
